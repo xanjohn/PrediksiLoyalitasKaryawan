@@ -4,40 +4,44 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 import joblib
+from sklearn.cluster import KMeans
+from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
+import plotly.express as px 
 
-# # Load the pre-trained model
-# model = joblib.load('model.pkl')  # Ganti dengan path ke model Anda
+# Load the pre-trained model
+model = joblib.load('model1.pkl')  # Ganti dengan path ke model Anda
 
-# # Function to encode categorical features
-# def encode_features(df):
-#     le = LabelEncoder()
-#     categorical_cols = ['Department', 'Gender', 'MaritalStatus', 'OverTime']
-#     for col in categorical_cols:
-#         df[col] = le.fit_transform(df[col])
-#     return df
+# Function to encode categorical features
+def encode_features(df):
+    # Encode Gender, MaritalStatus, and OverTime as one-hot vectors
+    df = pd.get_dummies(df, columns=['Gender', 'MaritalStatus', 'OverTime'], drop_first=True)
+    return df
 
 # Function to make predictions
 def predict(attrs):
     df = pd.DataFrame([attrs], columns=[
-        'Age', 'Department', 'DistanceFromHome', 'Education',
-        'EnvironmentSatisfaction', 'Gender', 'HourlyRate', 'JobInvolvement',
-        'JobLevel', 'JobSatisfaction', 'MaritalStatus', 'MonthlyRate',
-        'OverTime', 'PercentSalaryHike', 'PerformanceRating',
+        'Age', 'DistanceFromHome', 'Education', 'EnvironmentSatisfaction',
+        'HourlyRate', 'JobInvolvement', 'JobLevel', 'JobSatisfaction',
+        'MonthlyRate', 'PercentSalaryHike', 'PerformanceRating',
         'RelationshipSatisfaction', 'TotalWorkingYears', 'WorkLifeBalance',
         'YearsAtCompany', 'YearsInCurrentRole', 'YearsSinceLastPromotion',
-        'YearsWithCurrManager'
+        'YearsWithCurrManager', 'Gender_Male', 'MaritalStatus_Married',
+        'MaritalStatus_Single', 'OverTime_Yes'
     ])
     df = encode_features(df)
     prediction = model.predict(df)
-    return prediction[0]
+    proba = model.predict_proba(df)  # Get prediction probabilities
+    return prediction[0], proba
 
 st.title('Prediksi Resign Pegawai')
 
 # Input fields
 age = st.slider('Age', 18, 65, 30)
-department = st.selectbox('Department', ['Sales', 'HR', 'Development', 'Finance', 'Marketing'])
 distance_from_home = st.slider('DistanceFromHome', 1, 30, 10)
-education = st.selectbox('Education', [1, 2, 3, 4])  # Asumsi kualifikasi pendidikan sebagai angka
+education = st.selectbox('Education', [1, 2, 3, 4])  # Education level as a number
 environment_satisfaction = st.slider('EnvironmentSatisfaction', 1, 4, 3)
 gender = st.selectbox('Gender', ['Male', 'Female'])
 hourly_rate = st.slider('HourlyRate', 10, 100, 20)
@@ -57,19 +61,29 @@ years_in_current_role = st.slider('YearsInCurrentRole', 0, 10, 3)
 years_since_last_promotion = st.slider('YearsSinceLastPromotion', 0, 10, 2)
 years_with_curr_manager = st.slider('YearsWithCurrManager', 0, 20, 5)
 
+# Convert inputs to the expected format for prediction
+attrs = [
+    age, distance_from_home, education, environment_satisfaction,
+    hourly_rate, job_involvement, job_level, job_satisfaction,
+    monthly_rate, percent_salary_hike, performance_rating,
+    relationship_satisfaction, total_working_years, work_life_balance,
+    years_at_company, years_in_current_role, years_since_last_promotion,
+    years_with_curr_manager, 1 if gender == 'Male' else 0,
+    1 if marital_status == 'Married' else 0,
+    1 if marital_status == 'Single' else 0,
+    1 if over_time == 'Yes' else 0
+]
+
 # Predict button
 if st.button('Predict'):
-    attrs = [
-        age, department, distance_from_home, education,
-        environment_satisfaction, gender, hourly_rate, job_involvement,
-        job_level, job_satisfaction, marital_status, monthly_rate,
-        over_time, percent_salary_hike, performance_rating,
-        relationship_satisfaction, total_working_years, work_life_balance,
-        years_at_company, years_in_current_role, years_since_last_promotion,
-        years_with_curr_manager
-    ]
-    result = predict(attrs)
-    if result == 1:
-        st.write('Prediksi: Karyawan kemungkinan akan keluar.')
-    else:
-        st.write('Prediksi: Karyawan kemungkinan akan tetap.')
+    result, proba = predict(attrs)
+    
+    st.write(f'Prediksi: {"Karyawan kemungkinan akan keluar" if result == 1 else "Karyawan kemungkinan akan bertahan"}')
+    
+    # Display the probabilities
+    prob_df = pd.DataFrame(proba, columns=['Tetap', 'Keluar'])
+    st.write(prob_df)
+    
+    # Visualize probabilities
+    fig = px.bar(prob_df.T, title='Probabilitas', labels={'value': 'Probabilitas', 'index': 'Label'})
+    st.plotly_chart(fig)
