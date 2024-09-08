@@ -35,16 +35,16 @@ def predict(attrs):
 st.title('Prediksi Keluar Karyawan dengan Probabilitas')
 
 # Input fields
-satisfaction_level = st.slider('Satisfaction Level', 0.0, 1.0, 0.5)
-last_evaluation = st.slider('Last Evaluation', 0.0, 1.0, 0.5)
-number_project = st.slider('Number of Projects', 1, 10, 3)
-average_montly_hours = st.slider('Average Monthly Hours', 80, 320, 160)
-time_spend_company = st.slider('Time Spent at Company (Years)', 0, 20, 3)
-Work_accident = st.selectbox('Work Accident', [0, 1])
-promotion_last_5years = st.selectbox('Promotion in Last 5 Years', [0, 1])
+satisfaction_level = st.slider('Tingkat Kepuasan', 0.0, 1.0, 0.5)
+last_evaluation = st.slider('Evaluasi Terakhir', 0.0, 1.0, 0.5)
+number_project = st.slider('Jumlah Project Yang Dikerjakan', 1, 10, 3)
+average_montly_hours = st.slider('Rata-Rata Jam Kerja Perbulan', 80, 320, 160)
+time_spend_company = st.slider('Waktu Yang Dihabiskan Di Perusahaan (Tahun)', 0, 20, 3)
+Work_accident = st.selectbox('Kejadian Saat Kerja', [0, 1])
+promotion_last_5years = st.selectbox('Promosi Dalam 5 tahun Terakhir', [0, 1])
 Hubungan_dengan_atasan = st.slider('Hubungan dengan Atasan', 0.0, 1.0, 0.5)
 performa = st.slider('Performa', 0.0, 1.0, 0.5)
-gaji = st.selectbox('Gaji', ['Low', 'Medium', 'High'])
+gaji = st.selectbox('Gaji', ['Rendah', 'Sedang', 'Tinggi'])
 beban_kerja = st.slider('Beban Kerja', 0.0, 1.0, 0.5)
 apresiasi_atasan = st.slider('Apresiasi Atasan', 0.0, 1.0, 0.5)
 jam_kerja = st.slider('Jam Kerja', 80, 320, 160)
@@ -68,17 +68,16 @@ if st.button('Predict'):
     
     if result == 1:
         st.write('Prediksi: Karyawan kemungkinan akan keluar.')
-        st.write(f'Probabilitas Keluar: {probability:.2f}')
     else:
         st.write('Prediksi: Karyawan kemungkinan akan bertahan.')
-        st.write(f'Probabilitas Bertahan: {probability:.2f}')
+
     
+    # Visualize the probability using Pie Chart
+    labels = ['Bertahan', 'Keluar']
+    sizes = [1 - probability, probability]
+    colors = ['green', 'red']
     
-    
-    # Visualize the probability
     fig, ax = plt.subplots()
-    ax.bar(['Tetap', 'Keluar'], [1-probability, probability], color=['green', 'red'])
-    ax.set_ylim(0, 1)
-    ax.set_ylabel('Probabilitas')
-    ax.set_title('Probabilitas Prediksi')
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%', colors=colors, startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig)
